@@ -42,23 +42,42 @@ class JaxaDataProvider:
                 ).get_images()
                 
                 if data:
-                    # カラーマップ適用済み画像を生成
-                    je.ImageProcess(data).show_images()
+                    # 数値データを保存
+                    raster_data = data.raster.img[0]
+                    number_datas.append(raster_data)
                     
-                    # matplotlibのfigureをキャプチャ
-                    fig = plt.gcf()
+                    # 直接imshowで画像を生成
+                    fig, ax = plt.subplots(figsize=(8, 6))
+                    
+                    # 緯度経度の範囲を取得
+                    extent = [bbox[0], bbox[2], bbox[1], bbox[3]]  # [west, east, south, north]
+                    
+                    # LSTの場合は摂氏変換して表示範囲を設定
+                    if band == 'LST':
+                        # ケルビンから摂氏に変換
+                        raster_data_celsius = raster_data - 273.15
+                        im = ax.imshow(raster_data_celsius, extent=extent, aspect='auto', origin='upper', cmap='jet')
+                        cbar = plt.colorbar(im, ax=ax)
+                        cbar.set_label('Temperature (°C)', rotation=270, labelpad=20)
+                    else:
+                        im = ax.imshow(raster_data, extent=extent, aspect='auto', origin='upper', vmin=0, vmax=1, cmap='jet')
+                        cbar = plt.colorbar(im, ax=ax)
+                        cbar.set_label(band, rotation=270, labelpad=20)
+                    
+                    ax.set_xlabel('Longitude (°E)')
+                    ax.set_ylabel('Latitude (°N)')
+                    ax.set_title(f'{band} - {target_year}')
+                    
+                    # PIL Imageに変換
                     buf = io.BytesIO()
                     fig.savefig(buf, format='png', bbox_inches='tight', dpi=150)
                     buf.seek(0)
-                    
-                    # PIL Imageに変換
                     pil_img = Image.open(buf).copy()
                     images.append(pil_img)
                     
-                    #数値データの保存
-                    number_datas.append(data.raster.img[0])
                     # メモリ解放
                     plt.close(fig)
+                    buf.close()
                 else:
                     images.append(None)
                     number_datas.append(None)

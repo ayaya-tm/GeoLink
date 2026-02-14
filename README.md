@@ -97,7 +97,7 @@ LeafCastは、JAXA（宇宙航空研究開発機構）とNASAの衛星データ�
 
 1. **リポジトリのクローン**
 ```bash
-git clone https://github.com/yourusername/leafcast.git
+git clone https://github.com/ayaya-tm/leafcast.git
 cd leafcast
 ```
 

@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_folium import st_folium
 import folium
 from jaxa_api import JaxaDataProvider
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from future_prefiction import create_future_prediction_graph, simulate_greening_effect
@@ -21,14 +20,14 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: bold;
         color: #2e7d32;
-        text-align: center;
+        text-align: left;
         padding: 1rem 0;
         margin-bottom: 0.5rem;
     }
     .sub-header {
         font-size: 1.2rem;
         color: #555;
-        text-align: center;
+        text-align: left;
         margin-bottom: 2rem;
     }
     .info-box {
@@ -72,16 +71,14 @@ if 'ndvi_number_datas' not in st.session_state:
 if 'last_bbox_key' not in st.session_state:
     st.session_state.last_bbox_key = ""
 
-# ステップ1: 地図表示
+# step1: 地図表示
 st.markdown("---")
-st.markdown("### 📍 ステップ1：調査エリアを選択")
-st.markdown("地図を拡大・縮小・移動して、調査したいエリアを表示してください。")
+st.markdown("### 📍 step1：調査エリアを選択")
+st.markdown("地図を操作して、調査エリアを表示してください。")
 
-col_map1, col_map2, col_map3 = st.columns([1, 4, 1])
-with col_map2:
-    m_base = folium.Map(location=[35.68, 139.76], zoom_start=10)
-    output = st_folium(m_base, width=900, height=500, key="base_map", returned_objects=["bounds"])
 
+m_base = folium.Map(location=[33.66, 130.42], zoom_start=8)
+output = st_folium(m_base, width=700, height=525, key="base_map", returned_objects=["bounds"])
 # データ取得
 if output and output.get('bounds'):
     b = output['bounds']
@@ -111,13 +108,13 @@ if output and output.get('bounds'):
                     st.session_state.lst_images, st.session_state.lst_number_datas = provider.get_land_cover_images(
                         current_bbox,
                         START_YEAR,
-                        num_years=10
+                        num_years=23
                     )
                     # NDVIデータ取得
                     st.session_state.ndvi_images, st.session_state.ndvi_number_datas = provider.get_ndvi_images(
                         current_bbox,
                         START_YEAR,
-                        num_years=10
+                        num_years=23
                     )
                 st.rerun()
 
@@ -141,9 +138,9 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
             })
     
     if len(valid_data) > 0:
-        # ステップ2: 衛星データ表示
+        # step2: 衛星データ表示
         st.markdown("---")
-        st.markdown("### 🛰️ ステップ2：衛星観測データの確認")
+        st.markdown("### 🛰️ step2：衛星観測データの確認")
         
         # スライダー
         selected_idx = st.select_slider(
@@ -186,9 +183,14 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
             </div>
             """, unsafe_allow_html=True)
         
+        st.markdown("""
+                    注釈：取得元の地図と表示される画像の解像度に差分が出ることがありますが  
+                    　　　API側の仕様によるもので、画像データ以外は取得元の地図と同じ範囲をカバーしています。
+                    """)
+
         # 折れ線グラフ作成（未来予測付き）
         st.markdown("---")
-        st.markdown("### 📊 ステップ3：トレンド分析と未来予測")
+        st.markdown("### 📊 step3：トレンド分析と未来予測")
         
         # LSTとNDVIの平均値を計算
         lst_values = []
@@ -244,7 +246,7 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
         
         # データテーブル表示
         st.markdown("---")
-        st.markdown("### 📋 ステップ4：詳細データ一覧")
+        st.markdown("### 📋 step4：詳細データ一覧")
         
         # タブで観測データと予測データを分ける
         tab1, tab2, tab3 = st.tabs(["📊 観測データのみ", "🔮 観測 + 予測データ", "📈 統計情報"])
@@ -309,7 +311,7 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
         
         # 緑化シミュレーション
         st.markdown("---")
-        st.markdown("### 🌳 ステップ5：緑化シミュレーション")
+        st.markdown("### 🌳 step5：緑化シミュレーション")
         
         st.markdown("""
         <div class="info-box">
