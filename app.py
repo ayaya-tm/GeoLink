@@ -45,7 +45,7 @@ if output and output.get('bounds'):
                     st.session_state.jaxa_data_list = provider.get_land_cover_images(
                         current_bbox,
                         START_YEAR,
-                        num_years=10
+                        num_years=2
                     )
                 st.rerun()
 
