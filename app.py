@@ -4,6 +4,7 @@ import folium
 from jaxa_api import JaxaDataProvider
 import matplotlib.pyplot as plt
 import numpy as np
+from future_prefiction import create_future_prediction_graph  # 追加
 
 # ページ設定
 st.set_page_config(layout="wide")
@@ -117,9 +118,9 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
                 use_container_width=True
             )
         
-        # 折れ線グラフ作成
+        # 折れ線グラフ作成（未来予測付き）
         st.markdown("---")
-        st.subheader("③ 数値データの比較")
+        st.subheader("③ 数値データの比較と未来予測")
         
         # LSTとNDVIの平均値を計算
         lst_values = []
@@ -138,33 +139,8 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
             else:
                 ndvi_values.append(0)
         
-        # 折れ線グラフを描画（1つのグラフに統合）
-        fig, ax1 = plt.subplots(figsize=(12, 6))
-        
-        # LST折れ線グラフ（左軸）
-        color1 = 'orangered'
-        ax1.set_xlabel('年', fontsize=12)
-        ax1.set_ylabel('LST平均値 (℃)', color=color1, fontsize=12)
-        line1 = ax1.plot(years, lst_values, color=color1, marker='o', linewidth=2, markersize=8, label='LST（地表面温度）')
-        ax1.tick_params(axis='y', labelcolor=color1)
-        ax1.grid(alpha=0.3)
-        
-        # NDVI折れ線グラフ（右軸）
-        ax2 = ax1.twinx()
-        color2 = 'green'
-        ax2.set_ylabel('NDVI平均値', color=color2, fontsize=12)
-        line2 = ax2.plot(years, ndvi_values, color=color2, marker='s', linewidth=2, markersize=8, label='NDVI（植生指数）')
-        ax2.tick_params(axis='y', labelcolor=color2)
-        
-        # タイトルと凡例
-        ax1.set_title('地表面温度（LST）と植生指数（NDVI）の推移', fontsize=14, fontweight='bold')
-        
-        # 凡例を統合
-        lines = line1 + line2
-        labels = [l.get_label() for l in lines]
-        ax1.legend(lines, labels, loc='upper left', fontsize=10)
-        
-        plt.tight_layout()
+        # 未来予測グラフを生成
+        fig = create_future_prediction_graph(years, ndvi_values, lst_values, START_YEAR, predict_years=20)
         st.pyplot(fig)
         
         # 凡例
@@ -178,6 +154,11 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
         **NDVI (Normalized Difference Vegetation Index / 植生指数)**
         - 値が高いほど植生が豊か（-1～1の範囲）
         - 森林伐採や都市化により減少傾向
+        
+        **予測について**
+        - 実線：実測値（衛星データから取得）
+        - 破線：予測値（線形回帰モデルによる推定）
+        - 予測は過去のトレンドを基に計算されています
         
         💡 スライダーを動かして年次変化を確認できます
         """)
