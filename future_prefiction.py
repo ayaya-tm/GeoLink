@@ -69,3 +69,35 @@ def create_future_prediction_graph(years, ndvi_values, lst_values, start_year=20
     plt.tight_layout()
     
     return fig
+
+def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increase_rate=0.01):
+    """
+    来年のNDVIが想定よりX%上昇した場合のLST抑制効果をシミュレーションする
+    """
+    # 1. モデルの準備
+    years_obs = np.array(years).reshape(-1, 1)
+    ndvi_obs = np.array(ndvi_values).reshape(-1, 1)
+    lst_obs = np.array(lst_values).reshape(-1, 1)
+
+    model_ndvi = LinearRegression().fit(years_obs, ndvi_obs)
+    model_lst = LinearRegression().fit(ndvi_obs, lst_obs)
+
+    # 2. 通常の予測（ベースライン）
+    base_ndvi = model_ndvi.predict([[target_year]])[0][0]
+    base_lst = model_lst.predict([[base_ndvi]])[0][0]
+
+    # 3. 緑化シミュレーション（NDVIを1%など底上げ）
+    # ここでの1%は「数値に1.01を掛ける」か「0.01を足す」か選べますが、指数なので掛け算が一般的です
+    sim_ndvi = base_ndvi * (1 + increase_rate)
+    sim_lst = model_lst.predict([[sim_ndvi]])[0][0]
+
+    # 4. 変化率の計算
+    lst_change_val = sim_lst - base_lst
+    lst_change_percent = (lst_change_val / base_lst) * 100
+
+    print(f"--- {target_year}年 緑化シミュレーション ---")
+    print(f"想定NDVI: {base_ndvi:.4f} → シミュレーションNDVI: {sim_ndvi:.4f} (+{increase_rate*100}%)")
+    print(f"想定温度: {base_lst:.2f}℃ → シミュレーション温度: {sim_lst:.2f}℃")
+    print(f"温度変化: {lst_change_val:.2f}℃ ({lst_change_percent:.2f}%)")
+    
+    return sim_lst
