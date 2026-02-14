@@ -2,49 +2,102 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
-# 1. データの準備（実測値）
-years_obs = np.array(range(2002, 2023)).reshape(-1, 1)
-ndvi_obs = np.array([0.5516, 0.5351, 0.5679, 0.5206, 0.4995, 0.5586, 0.5478, 0.5805, 0.5360, 0.5328, 0.5418, 0.5749, 0.5860, 0.5757, 0.6066, 0.5795, 0.6013, 0.5586, 0.5900, 0.6016, 0.6031])
-lst_obs = np.array([17.9276, 16.9919, 19.3214, 19.1023, 15.1357, 16.0208, 17.5013, 19.5333, 15.4234, 18.1445, 16.5340, 17.1862, 18.6662, 19.3501, 18.4579, 17.6306, 20.6522, 16.9261, 17.0279, 18.5783, 19.0695])
+def create_future_prediction_graph(years, ndvi_values, lst_values, start_year=2002, predict_years=20):
+    """
+    LSTとNDVIの実測値から未来予測グラフを作成
+    
+    Args:
+        years (list): 観測年のリスト
+        ndvi_values (list): NDVIの実測値リスト
+        lst_values (list): LSTの実測値リスト
+        start_year (int): 開始年
+        predict_years (int): 予測する年数
+    
+    Returns:
+        matplotlib.figure.Figure: 生成されたグラフのfigureオブジェクト
+    """
+    # データをNumPy配列に変換
+    years_obs = np.array(years).reshape(-1, 1)
+    ndvi_obs = np.array(ndvi_values)
+    lst_obs = np.array(lst_values)
+    
+    # 未来予測用の年の配列を作成
+    last_year = years[-1]
+    years_future = np.array(range(last_year + 1, last_year + 1 + predict_years)).reshape(-1, 1)
+    
+    # NDVI予測モデル (Year -> NDVI)
+    model_ndvi = LinearRegression().fit(years_obs, ndvi_obs)
+    ndvi_future = model_ndvi.predict(years_future)
+    
+    # LST予測モデル (NDVI -> LST)
+    model_lst = LinearRegression().fit(ndvi_obs.reshape(-1, 1), lst_obs)
+    lst_future = model_lst.predict(ndvi_future.reshape(-1, 1))
+    
+    # 全期間データの結合
+    years_all = np.concatenate([years_obs.flatten(), years_future.flatten()])
+    ndvi_all = np.concatenate([ndvi_obs, ndvi_future])
+    lst_all = np.concatenate([lst_obs, lst_future])
+    
+    # グラフ作成
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+    
+    # NDVIのプロット（左軸）
+    obs_len = len(years_obs)
+    ax1.plot(years_all[:obs_len], ndvi_all[:obs_len], color='green', marker='o', linewidth=2, markersize=8, label='NDVI (実測値)')
+    ax1.plot(years_all[obs_len-1:], ndvi_all[obs_len-1:], color='green', linestyle='--', linewidth=2, marker='o', markersize=6, alpha=0.7, label='NDVI (予測値)')
+    ax1.set_xlabel('年', fontsize=12)
+    ax1.set_ylabel('NDVI（植生指数）', color='green', fontsize=12)
+    ax1.tick_params(axis='y', labelcolor='green')
+    ax1.grid(True, which='both', linestyle='--', alpha=0.3)
+    
+    # LSTのプロット（右軸）
+    ax2 = ax1.twinx()
+    ax2.plot(years_all[:obs_len], lst_all[:obs_len], color='orangered', marker='s', linewidth=2, markersize=8, label='LST (実測値)')
+    ax2.plot(years_all[obs_len-1:], lst_all[obs_len-1:], color='orangered', linestyle='--', linewidth=2, marker='s', markersize=6, alpha=0.7, label='LST (予測値)')
+    ax2.set_ylabel('LST 地表面温度 (℃)', color='orangered', fontsize=12)
+    ax2.tick_params(axis='y', labelcolor='orangered')
+    
+    # タイトルと凡例
+    ax1.set_title(f'地表面温度（LST）と植生指数（NDVI）の推移と予測 ({start_year}-{years_all[-1]:.0f})', 
+                  fontsize=14, fontweight='bold')
+    
+    # 凡例を統合
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=10)
+    
+    plt.tight_layout()
+    
+    return fig
 
-# 2. モデルの作成と未来予測（2023-2042）
-years_future = np.array(range(2023, 2043)).reshape(-1, 1)
+def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increase_rate=0.01):
+    """
+    来年のNDVIが想定よりX%上昇した場合のLST抑制効果をシミュレーションする
+    """
+    # 1. モデルの準備
+    years_obs = np.array(years).reshape(-1, 1)
+    ndvi_obs = np.array(ndvi_values).reshape(-1, 1)
+    lst_obs = np.array(lst_values).reshape(-1, 1)
 
-# NDVI予測モデル (Year -> NDVI)
-model_ndvi = LinearRegression().fit(years_obs, ndvi_obs)
-ndvi_future = model_ndvi.predict(years_future)
+    model_ndvi = LinearRegression().fit(years_obs, ndvi_obs)
+    model_lst = LinearRegression().fit(ndvi_obs, lst_obs)
 
-# LST予測モデル (NDVI -> LST)
-model_lst = LinearRegression().fit(ndvi_obs.reshape(-1, 1), lst_obs)
-lst_future = model_lst.predict(ndvi_future.reshape(-1, 1))
+    # 2. 通常の予測（ベースライン）
+    base_ndvi = model_ndvi.predict([[target_year]])[0][0]
+    base_lst = model_lst.predict([[base_ndvi]])[0][0]
 
-# 全期間データの結合
-years_all = np.concatenate([years_obs.flatten(), years_future.flatten()])
-ndvi_all = np.concatenate([ndvi_obs, ndvi_future])
-lst_all = np.concatenate([lst_obs, lst_future])
+    # 3. 緑化シミュレーション（NDVIを1%など底上げ）
+    # ここでの1%は「数値に1.01を掛ける」か「0.01を足す」か選べますが、指数なので掛け算が一般的です
+    sim_ndvi = base_ndvi * (1 + increase_rate)
+    sim_lst = model_lst.predict([[sim_ndvi]])[0][0]
 
-# 3. グラフ作成
-fig, ax1 = plt.subplots(figsize=(12, 6))
+    # 4. 変化率の計算
+    lst_change_val = sim_lst - base_lst
+    lst_change_percent = (lst_change_val / base_lst) * 100
 
-# NDVIのプロット（左軸）
-ax1.plot(years_all[:21], ndvi_all[:21], color='green', marker='o', label='NDVI (Observed)')
-ax1.plot(years_all[20:], ndvi_all[20:], color='green', linestyle='--', label='NDVI (Predicted)')
-ax1.set_xlabel('Year')
-ax1.set_ylabel('NDVI', color='green')
-ax1.tick_params(axis='y', labelcolor='green')
-ax1.grid(True, which='both', linestyle='--', alpha=0.5)
-
-# LSTのプロット（右軸）
-ax2 = ax1.twinx()
-ax2.plot(years_all[:21], lst_all[:21], color='red', marker='s', label='LST (Observed)')
-ax2.plot(years_all[20:], lst_all[20:], color='red', linestyle='--', label='LST (Predicted)')
-ax2.set_ylabel('LST (°C)', color='red')
-ax2.tick_params(axis='y', labelcolor='red')
-
-# 仕上げ
-plt.title('40-Year Trend & Forecast: NDVI and LST (2002-2042)')
-fig.tight_layout()
-ax1.legend(loc='upper left')
-ax2.legend(loc='upper right')
-
-plt.show()
+    print(f"--- {target_year}年 緑化シミュレーション ---")
+    print(f"想定NDVI: {base_ndvi:.4f} → シミュレーションNDVI: {sim_ndvi:.4f} (+{increase_rate*100}%)")
+    print(f"想定温度: {base_lst:.2f}℃ → シミュレーション温度: {sim_lst:.2f}℃")
+    print(f"温度変化: {lst_change_val:.2f}℃ ({lst_change_percent:.2f}%)")
+    
+    return sim_lst

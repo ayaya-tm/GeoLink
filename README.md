@@ -1,504 +1,350 @@
-# 街の履歴書 - 完全ガイド
+# 🌿 LeafCast - 未来地表温度予測システム
 
-## 📦 必要なライブラリ一覧
+**23年間の衛星観測データから未来の地表温度を予測し、緑化による温度抑制効果をシミュレーション**
 
-### requirements.txt
-```txt
-streamlit==1.31.0
-streamlit-folium==0.17.0
-folium==0.15.1
-jaxa==0.1.0
-numpy==1.24.3
-Pillow==10.2.0
-matplotlib==3.8.2
-```
-
-### インストール方法
-```bash
-pip install -r requirements.txt
-```
-
-または個別にインストール：
-```bash
-pip install streamlit streamlit-folium folium jaxa numpy Pillow matplotlib
-```
+![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
 
-## 🗂️ ファイル構成
+## 📋 目次
 
-```
-project/
-│
-├── app.py              # Streamlitアプリケーション（メイン）
-├── jaxa_api.py         # JAXA APIラッパー
-├── requirements.txt    # 依存ライブラリリスト
-├── APP_GUIDE.md        # app.pyの詳細解説
-└── JAXA_API_GUIDE.md   # jaxa_api.pyの詳細解説
-```
+- [概要](#概要)
+- [主な機能](#主な機能)
+- [技術スタック](#技術スタック)
+- [セットアップ](#セットアップ)
+- [使用方法](#使用方法)
+- [データソース](#データソース)
+- [プロジェクト構成](#プロジェクト構成)
+- [予測モデルの詳細](#予測モデルの詳細)
+- [注意事項](#注意事項)
+- [今後の展望](#今後の展望)
+- [ライセンス](#ライセンス)
 
 ---
 
-## 🚀 起動方法
+## 🎯 概要
 
+LeafCastは、JAXA（宇宙航空研究開発機構）とNASAの衛星データを活用し、地表面温度（LST）と植生指数（NDVI）の長期トレンドから未来を予測するWebアプリケーションです。都市計画、環境政策立案、ヒートアイランド対策などに活用できます。
+
+### 🌟 特徴
+
+- **📍 任意エリア選択**: 地図上で自由にエリアを選択可能
+- **🛰️ リアルタイムデータ取得**: JAXA APIから最新の衛星データを取得
+- **📊 長期トレンド分析**: 2002年から現在までの変化を可視化
+- **🔮 最大20年先の予測**: 線形回帰モデルによる未来予測
+- **🌳 緑化シミュレーション**: 植生増加による温度抑制効果の定量評価
+- **📋 データ一覧表示**: 観測値と予測値を統合したテーブル
+- **💻 直感的UI**: 専門知識不要の使いやすいインターフェース
+
+---
+
+## 🚀 主な機能
+
+### 1. 📍 調査エリア選択
+- インタラクティブな地図から任意のエリアを選択
+- 選択エリアの衛星データを自動取得
+
+### 2. 🛰️ 衛星データ可視化
+- **LST（地表面温度）**: ヒートマップ表示
+- **NDVI（植生指数）**: 植生分布の可視化
+- スライダーで年次変化を確認
+
+### 3. 📊 トレンド分析と予測
+- 過去10年分の観測データから未来20年を予測
+- 実測値と予測値を同時にグラフ表示
+- LST・NDVI両指標の経年変化を追跡
+
+### 4. 📋 詳細データ一覧
+- **観測データのみ**: 実測値のテーブル表示
+- **観測+予測データ**: 観測と予測を統合したテーブル（✅観測/🔮予測で識別）
+- **統計情報**: 平均値、最大値、最小値、標準偏差
+
+### 5. 🌳 緑化シミュレーション
+- NDVIを1〜20%向上させた場合の温度変化を計算
+- 緑化政策の効果を事前評価
+- 具体的な温度低減量を数値で提示
+
+---
+
+## 🛠️ 技術スタック
+
+### フロントエンド
+- **Streamlit**: Webアプリケーションフレームワーク
+- **Folium**: インタラクティブ地図表示
+- **Matplotlib**: データ可視化
+
+### データ処理
+- **NumPy**: 数値計算
+- **Pandas**: データフレーム操作
+- **scikit-learn**: 機械学習（線形回帰）
+
+### データソース
+- **JAXA Earth API**: 衛星データ取得
+- **MODIS**: NASA地球観測センサー
+
+---
+
+## 💻 セットアップ
+
+### 必要要件
+
+- Python 3.8以上
+- pip（パッケージマネージャー）
+
+### インストール手順
+
+1. **リポジトリのクローン**
+```bash
+git clone https://github.com/yourusername/leafcast.git
+cd leafcast
+```
+
+2. **依存パッケージのインストール**
+```bash
+bash setup_scripts/pip_install.sh
+```
+
+または手動でインストール:
+```bash
+pip install --upgrade pip
+pip install streamlit folium streamlit-folium matplotlib pandas scikit-learn pillow numpy
+pip install ./jaxaearth/jaxa-earth-0.1.3.zip
+```
+
+3. **アプリケーションの起動**
 ```bash
 streamlit run app.py
 ```
 
-ブラウザで http://localhost:8501 が自動で開く
-
----
-
-## 📚 ライブラリの役割マップ
-
-### フロントエンド層（app.py）
+4. **ブラウザでアクセス**
 ```
-Streamlit ─┬─ 画面表示
-           ├─ ユーザー入力受付
-           └─ セッション管理
-
-Folium ────┬─ 地図表示
-           └─ 範囲選択
-
-streamlit-folium ── StreamlitとFoliumの橋渡し
-```
-
-### バックエンド層（jaxa_api.py）
-```
-JAXA API ──┬─ 衛星データ取得
-           └─ フィルタリング
-
-NumPy ─────── 数値配列操作
-
-Matplotlib ─┬─ カラーマップ適用
-            └─ 図の描画
-
-PIL ───────┬─ 画像変換
-           └─ 保存・読み込み
-
-io ────────── メモリストリーム
+http://localhost:8501
 ```
 
 ---
 
-## 🔄 データの流れ（全体像）
+## 📖 使用方法
 
-```
-ユーザー操作
-    ↓
-[Folium地図] 地図を移動
-    ↓
-[streamlit-folium] 範囲（bbox）を取得
-    ↓
-[Streamlit] session_stateで変化を検知
-    ↓
-[jaxa_api.py] JaxaDataProvider.get_land_cover_images()
-    ↓
-[JAXA API] 衛星データ取得
-    ↓
-[Matplotlib] カラーマップ適用・描画
-    ↓
-[io.BytesIO] メモリストリームに保存
-    ↓
-[PIL] 画像として読み込み
-    ↓
-[Streamlit] session_stateに保存
-    ↓
-[Streamlit] スライダーで年選択
-    ↓
-[Streamlit] 画像表示
-```
+### ステップ1: エリア選択
+1. 地図を拡大・縮小・ドラッグして調査エリアを表示
+2. 表示エリアが確定すると自動でデータ取得開始
+
+### ステップ2: 衛星データ確認
+1. スライダーで年次を選択
+2. LSTとNDVIの分布を視覚的に確認
+
+### ステップ3: トレンド分析
+1. グラフで過去のトレンドと未来予測を確認
+2. 実線（観測値）と破線（予測値）を比較
+
+### ステップ4: データ確認
+1. タブで「観測データのみ」「観測+予測」「統計情報」を切り替え
+2. ✅マーク（観測値）と🔮マーク（予測値）で識別
+
+### ステップ5: 緑化シミュレーション
+1. 対象年を設定（例：2030年）
+2. NDVI向上率を設定（例：5%）
+3. 「シミュレーション実行」ボタンをクリック
+4. 温度低減効果を確認
 
 ---
 
-## 🎯 各ライブラリの詳細
+## 📊 データソース
 
-### 1. Streamlit
-**公式サイト:** https://streamlit.io/
+### LST（地表面温度）
+- **データセット**: NASA EOSDIS Terra MODIS MOD11C3-LST
+- **パラメータ**: 日中の地表面温度（Kelvin → Celsius変換）
+- **解像度**: 月次平均値
+- **観測時期**: 2002年〜現在
 
-**役割:** Webアプリケーションフレームワーク
+### NDVI（植生指数）
+- **データセット**: JAXA JASMES Terra/Aqua MODIS NDVI
+- **パラメータ**: 正規化植生指数
+- **解像度**: 月次平均値
+- **観測時期**: 2002年〜現在
 
-**特徴:**
-- Pythonコードだけでウェブアプリが作れる
-- データの再実行モデル（ページ更新ごとにスクリプト全体を実行）
-- session_stateで状態管理
-
-**使用例:**
-```python
-import streamlit as st
-
-st.title("タイトル")
-st.image(image)
-value = st.slider("選択", 0, 100)
-```
+### 取得条件
+- **対象月**: 毎年4月（春季）
+- **空間解像度**: 20ピクセル/単位
+- **データ形式**: GeoTIFF（ラスターデータ）
 
 ---
 
-### 2. Folium
-**公式サイト:** https://python-visualization.github.io/folium/
+## 📁 プロジェクト構成
 
-**役割:** インタラクティブ地図作成
-
-**特徴:**
-- Leaflet.jsのPythonラッパー
-- OpenStreetMapやGoogle Mapsライクな地図
-- マーカー、ポリゴン、ヒートマップなど豊富な機能
-
-**使用例:**
-```python
-import folium
-
-m = folium.Map(location=[35.68, 139.76], zoom_start=10)
-m.save('map.html')
 ```
+leafcast/
+│
+├── app.py                      # メインアプリケーション（Streamlit）
+├── jaxa_api.py                 # JAXA APIデータ取得クラス
+├── future_prefiction.py        # 予測モデルとシミュレーション
+│
+├── setup_scripts/
+│   └── pip_install.sh          # 依存パッケージインストールスクリプト
+│
+├── jaxaearth/
+│   └── jaxa-earth-0.1.3.zip    # JAXA Earth APIライブラリ
+│
+└── README.md                   # プロジェクト説明書
+```
+
+### ファイル詳細
+
+#### `app.py`
+- Streamlitベースのメインアプリケーション
+- UI/UXの実装、データフロー制御
+- セッション管理、グラフ描画
+- **改善点**:
+  - カスタムCSSで美しいレイアウト
+  - タブ切り替えで情報を整理
+  - 観測データと予測データを統合テーブルで表示
+
+#### `jaxa_api.py`
+- `JaxaDataProvider`クラス
+  - `get_land_cover_images()`: LSTデータ取得
+  - `get_ndvi_images()`: NDVIデータ取得
+  - `get_data_array()`: 汎用データ取得メソッド
+
+#### `future_prefiction.py`
+- `create_future_prediction_graph()`: 予測グラフ生成
+- `simulate_greening_effect()`: 緑化シミュレーション
 
 ---
 
-### 3. streamlit-folium
-**公式サイト:** https://github.com/randyzwitch/streamlit-folium
+## 🧮 予測モデルの詳細
 
-**役割:** StreamlitでFolium地図を表示
+### 線形回帰モデル
 
-**特徴:**
-- FoliumとStreamlitの統合
-- 地図の状態（範囲、クリック位置など）を取得可能
+本システムでは、scikit-learnの線形回帰を使用しています。
 
-**使用例:**
-```python
-from streamlit_folium import st_folium
+#### 1. NDVI予測モデル
 
-output = st_folium(folium_map, returned_objects=["bounds"])
-bbox = output['bounds']
 ```
+NDVI(t) = α × Year + β
+```
+
+- **α（傾き）**: 年あたりのNDVI変化率
+- **β（切片）**: 基準年のNDVI値
+- **学習方法**: 最小二乗法（Ordinary Least Squares）
+
+#### 2. LST予測モデル
+
+```
+LST(t) = γ × NDVI(t) + δ
+```
+
+- **γ（傾き）**: NDVIあたりの温度変化率（℃/NDVI）
+- **δ（切片）**: NDVI=0のときの理論温度
+- **前提**: NDVIとLSTに線形相関があること
+
+#### 3. 緑化シミュレーション
+
+```
+NDVI_sim = NDVI_base × (1 + 増加率)
+LST_sim = γ × NDVI_sim + δ
+ΔT = LST_sim - LST_base
+```
+
+### モデルの限界
+
+⚠️ **注意事項**
+
+1. **線形仮定**: 過去のトレンドが将来も継続すると仮定
+2. **非線形変化**: 急激な都市開発、大規模災害などは考慮されない
+3. **外部要因**: 気候変動、政策変更などの影響は反映されない
+4. **空間的均質性**: エリア内の微小な差異は平均化される
+
+💡 **推奨事項**
+- 複数シナリオでの予測を比較
+- 他の予測手法との併用
+- 定期的なモデルの再学習と検証
 
 ---
 
-### 4. JAXA Earth API
-**公式サイト:** https://data.earth.jaxa.jp/
+## ⚠️ 注意事項
 
-**役割:** JAXA衛星データへのアクセス
+### データ取得に関して
 
-**提供データ:**
-- MODIS（Terra/Aqua衛星）のNDVI
-- GCOM-C（しきさい）の海洋・大気データ
-- ALOS（だいち）の地形データ
-- など90種類以上
+1. **ネットワーク接続**: JAXA APIへのアクセスにはインターネット接続が必要
+2. **取得時間**: エリアサイズによって数十秒〜数分かかる場合があります
+3. **データ欠損**: 一部の年・エリアでデータが取得できない場合があります
+4. **API制限**: JAXA APIの利用規約に従ってください
 
-**使用例:**
-```python
-from jaxa.earth import je
+### 予測精度に関して
 
-data = je.ImageCollection(
-    collection="JAXA.JASMES_Terra.MODIS-Aqua.MODIS_ndvi.v811_global_monthly"
-).filter_date(dlim=["2020-01-01", "2020-12-31"])\
-  .get_images()
-```
+1. **あくまで推定値**: 実際の値とは異なる可能性があります
+2. **短期予測優先**: 5年以内の予測が最も信頼性が高い
+3. **トレンド依存**: 過去のトレンドが変化すると予測精度が低下
+4. **用途限定**: 学術研究、政策立案の参考資料として活用
 
----
+### システム要件
 
-### 5. NumPy
-**公式サイト:** https://numpy.org/
-
-**役割:** 数値計算・配列操作
-
-**特徴:**
-- 多次元配列（ndarray）のサポート
-- 高速な数値演算
-- 科学計算の基盤
-
-**使用例:**
-```python
-import numpy as np
-
-arr = np.array([[1, 2], [3, 4]])
-mean = np.mean(arr)
-arr[arr < 2] = 0  # 条件付き操作
-```
+- **推奨ブラウザ**: Google Chrome、Firefox、Safari（最新版）
+- **メモリ**: 最低4GB RAM（8GB以上推奨）
+- **ストレージ**: 500MB以上の空き容量
 
 ---
 
-### 6. Matplotlib
-**公式サイト:** https://matplotlib.org/
+## 🔮 今後の展望
 
-**役割:** グラフ・図の描画
+### 短期（3ヶ月以内）
+- [ ] 複数エリアの同時比較機能
+- [ ] データのCSVエクスポート
+- [ ] 季節別データ取得（現在は4月のみ）
 
-**特徴:**
-- 科学計算で最も使われる可視化ライブラリ
-- カラーマップ、軸ラベル、タイトルなど豊富な機能
-- バックエンドの切り替え（GUI/非GUI）
+### 中期（6ヶ月以内）
+- [ ] 機械学習モデルの高度化（LSTM、XGBoostなど）
+- [ ] 予測精度の評価指標表示
+- [ ] モバイル対応の最適化
 
-**使用例:**
-```python
-import matplotlib.pyplot as plt
-
-plt.plot([1, 2, 3], [1, 4, 9])
-plt.savefig('graph.png')
-plt.close()
-```
-
----
-
-### 7. Pillow (PIL)
-**公式サイト:** https://pillow.readthedocs.io/
-
-**役割:** 画像処理
-
-**特徴:**
-- JPEG、PNG、GIF、BMPなど主要形式に対応
-- リサイズ、トリミング、フィルタ適用など
-- NumPy配列との相互変換
-
-**使用例:**
-```python
-from PIL import Image
-
-img = Image.open('photo.jpg')
-img = img.resize((800, 600))
-img.save('resized.jpg')
-```
+### 長期（1年以内）
+- [ ] リアルタイム気象データとの統合
+- [ ] 都市計画シミュレーション機能
+- [ ] APIの公開（他システムとの連携）
+- [ ] 多言語対応（英語、中国語など）
 
 ---
 
-### 8. io（標準ライブラリ）
-**公式サイト:** https://docs.python.org/ja/3/library/io.html
+## 🤝 コントリビューション
 
-**役割:** 入出力ストリーム操作
+プルリクエストを歓迎します！大きな変更の場合は、まずissueを開いて変更内容を議論してください。
 
-**特徴:**
-- ファイルを書かずにメモリ内で処理
-- BytesIO: バイナリデータ用
-- StringIO: テキストデータ用
+### 開発ガイドライン
 
-**使用例:**
-```python
-import io
-
-buffer = io.BytesIO()
-buffer.write(b'Hello')
-buffer.seek(0)
-data = buffer.read()
-```
+1. コードスタイル: PEP 8に準拠
+2. コミットメッセージ: 明確で簡潔な説明
+3. テスト: 新機能には必ずテストを追加
 
 ---
 
-## 💾 データ構造の詳細
+## 📄 ライセンス
 
-### 1. BBox（Bounding Box）
-```python
-bbox = [西経度, 南緯度, 東経度, 北緯度]
-例: [139.0, 35.0, 140.0, 36.0]
+このプロジェクトはMITライセンスの下で公開されています。
 
-# 東京周辺の1度×1度の範囲
-# 西端: 139.0度
-# 南端: 35.0度（北緯）
-# 東端: 140.0度
-# 北端: 36.0度
-```
+### データ利用規約
 
-### 2. NDVI値
-```python
-値の範囲: -1.0 ～ +1.0
-
--1.0 ～ 0.0  : 水域、雲、雪
- 0.0 ～ 0.2  : 裸地、都市部
- 0.2 ～ 0.5  : 草地、農地
- 0.5 ～ 0.8  : 森林
- 0.8 ～ 1.0  : 非常に密な森林
-```
-
-### 3. session_state構造
-```python
-st.session_state = {
-    'jaxa_data_list': [
-        <PIL.Image>,  # 2002年
-        <PIL.Image>,  # 2003年
-        None,         # 2004年（取得失敗）
-        <PIL.Image>,  # 2005年
-        ...
-    ],
-    'last_bbox_key': "[139.0, 35.0, 140.0, 36.0]"
-}
-```
+- JAXA衛星データ: [JAXA利用規約](https://earth.jaxa.jp/)に準拠
+- NASA MODISデータ: パブリックドメイン
 
 ---
 
-## 🔧 カスタマイズガイド
+## 📞 お問い合わせ
 
-### 初期表示位置を変更
-```python
-# app.py 33行目付近
-m_base = folium.Map(location=[34.69, 135.50], zoom_start=10)
-# → 大阪に変更
-```
-
-### 取得年数を変更
-```python
-# app.py 60行目付近
-num_years=25  # 25年分取得（2002-2026）
-```
-
-### 解像度を変更
-```python
-# jaxa_api.py 23行目
-ppu = 40  # 2倍の解像度（処理時間も2倍）
-```
-
-### 画質を変更
-```python
-# jaxa_api.py 50行目付近
-fig.savefig(buf, format='png', bbox_inches='tight', dpi=300)
-# dpi: 100=低画質, 150=標準, 300=高画質
-```
-
-### レイアウトを変更
-```python
-# app.py 6行目
-st.set_page_config(layout="centered")  # 中央寄せ
-```
+質問、バグ報告、機能リクエストは[Issues](https://github.com/yourusername/leafcast/issues)からお願いします。
 
 ---
 
-## 🐛 トラブルシューティング
+## 🙏 謝辞
 
-### 問題1: 画像が表示されない
-**症状:** スライダーは動くが画像が出ない
-**原因:** データ取得失敗
-**対処:**
-```python
-# サイドバーでBBoxを確認
-# 範囲が海上や国外になっていないか確認
-```
-
-### 問題2: メモリ不足
-**症状:** "MemoryError"
-**対処:**
-```python
-# num_years を減らす
-num_years=5  # 25→5に変更
-
-# または解像度を下げる
-ppu = 10  # 20→10に変更
-```
-
-### 問題3: 処理が遅い
-**症状:** データ取得に時間がかかる
-**対処:**
-```python
-# 解像度を下げる
-ppu = 10
-
-# 取得年数を減らす
-num_years=5
-
-# 範囲を狭くする（地図をズームイン）
-```
-
-### 問題4: "FigureCanvasAgg" 警告
-**症状:**
-```
-UserWarning: FigureCanvasAgg is non-interactive
-```
-**対処:** 無視してOK（正常動作）
+- **JAXA（宇宙航空研究開発機構）**: 衛星データ提供
+- **NASA**: MODISセンサーデータ提供
+- **Streamlitコミュニティ**: フレームワーク開発
 
 ---
 
-## 📊 パフォーマンス最適化
-
-### 推奨設定（バランス型）
-```python
-num_years = 5      # 5年分
-ppu = 20           # 標準解像度
-dpi = 150          # 標準画質
-```
-
-### 高速設定（プロトタイプ）
-```python
-num_years = 2      # 2年分のみ
-ppu = 10           # 低解像度
-dpi = 100          # 低画質
-```
-
-### 高品質設定（最終版）
-```python
-num_years = 25     # 25年分
-ppu = 40           # 高解像度
-dpi = 300          # 高画質
-```
-
----
-
-## 🎓 学習リソース
-
-### Streamlit
-- 公式チュートリアル: https://docs.streamlit.io/library/get-started
-- チートシート: https://docs.streamlit.io/library/cheatsheet
-
-### JAXA Earth API
-- ドキュメント: https://data.earth.jaxa.jp/en/
-- データカタログ: https://data.earth.jaxa.jp/en/datasets
-
-### NumPy
-- クイックスタート: https://numpy.org/doc/stable/user/quickstart.html
-
-### Matplotlib
-- チュートリアル: https://matplotlib.org/stable/tutorials/index.html
-
-### Pillow
-- ハンドブック: https://pillow.readthedocs.io/en/stable/handbook/index.html
-
----
-
-## 📝 ライセンス情報
-
-### 使用データ
-- JAXA MODISデータ: JAXA利用規約に準拠
-- OpenStreetMap: ODbL (Open Database License)
-
-### ライブラリライセンス
-- Streamlit: Apache 2.0
-- Folium: MIT
-- NumPy: BSD
-- Matplotlib: PSF (Python Software Foundation)
-- Pillow: HPND (Historical Permission Notice and Disclaimer)
-
----
-
-## 🚀 デプロイ
-
-### Streamlit Cloud
-```bash
-# GitHub にpush後
-# https://streamlit.io/cloud でデプロイ
-```
-
-### Heroku
-```bash
-# Procfile作成
-web: streamlit run app.py --server.port=$PORT
-```
-
-### Docker
-```dockerfile
-FROM python:3.11
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8501
-CMD ["streamlit", "run", "app.py"]
-```
-
----
-
-## 📞 サポート
-
-問題が発生した場合：
-1. サイドバーのデバッグ情報を確認
-2. ターミナルのログを確認
-3. JAXA APIドキュメントを参照
-4. Streamlitコミュニティフォーラムで質問
-
----
-
-**作成:** 2026年2月
-**バージョン:** 1.0.0
+<div align="center">
+  <p>🌍 地球環境の未来を、データで見える化する 🌿</p>
+  <p>Made with ❤️ by LeafCast Team</p>
+</div>
