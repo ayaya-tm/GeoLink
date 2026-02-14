@@ -32,7 +32,7 @@ class JaxaDataProvider:
                     collection="JAXA.JASMES_Terra.MODIS-Aqua.MODIS_ndvi.v811_global_monthly",
                     ssl_verify=True
                 ).filter_date(
-                    dlim=[f"{target_year}-01-01T00:00:00", f"{target_year}-01-01T23:59:59"]
+                    dlim=[f"{target_year}-04-01T00:00:00", f"{target_year}-04-01T00:00:00"]
                 ).filter_resolution(
                     ppu=20
                 ).filter_bounds(

@@ -28,12 +28,12 @@ if output and output.get('bounds'):
         if sw.get('lng') is not None:
             # BBox作成
             current_bbox = [
-                round(sw['lng'], 1),
-                round(sw['lat'], 1),
-                round(ne['lng'], 1),
-                round(ne['lat'], 1)
+                round(sw['lng']),
+                round(sw['lat']),
+                round(ne['lng']),
+                round(ne['lat'])
             ]
-            bbox_key = str(current_bbox)
+            bbox_key = f"{current_bbox[0]:.4f},{current_bbox[1]:.4f},{current_bbox[2]:.4f},{current_bbox[3]:.4f}"
             
             # 範囲が変わった時だけ取得
             if st.session_state.last_bbox_key != bbox_key:
@@ -45,7 +45,7 @@ if output and output.get('bounds'):
                     st.session_state.jaxa_data_list = provider.get_land_cover_images(
                         current_bbox,
                         START_YEAR,
-                        num_years=23
+                        num_years=10
                     )
                 st.rerun()
 
