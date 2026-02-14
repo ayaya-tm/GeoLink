@@ -83,6 +83,5 @@ class JaxaDataProvider:
                 celsius_datas.append(None)
         
         return images, celsius_datas
-        return images, celsius
     def get_ndvi_images(self, bbox, start_year, num_years=5):
         return self.get_data_array(bbox, coll='JAXA.JASMES_Terra.MODIS-Aqua.MODIS_ndvi.v811_global_monthly', band='ndvi', start_year=start_year, num_years=num_years)
