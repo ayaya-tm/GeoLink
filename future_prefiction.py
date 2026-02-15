@@ -73,8 +73,12 @@ def create_future_prediction_graph(years, ndvi_values, lst_values, start_year=20
 def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increase_rate=0.01):
     """
     来年のNDVIが想定よりX%上昇した場合のLST抑制効果をシミュレーションする
+    
+    新しい温度感度公式を使用:
+    温度感度 = -32.35 × NDVI + 46.10
+    ΔT = 温度感度 × ΔNDVI
     """
-    # 1. モデルの準備
+    # 1. モデルの準備（NDVI予測のみ）
     years_obs = np.array(years).reshape(-1, 1)
     ndvi_obs = np.array(ndvi_values).reshape(-1, 1)
     lst_obs = np.array(lst_values).reshape(-1, 1)
@@ -86,10 +90,21 @@ def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increa
     base_ndvi = model_ndvi.predict([[target_year]])[0][0]
     base_lst = model_lst.predict([[base_ndvi]])[0][0]
 
-    # 3. 緑化シミュレーション（NDVIを1%など底上げ）
-    # ここでの1%は「数値に1.01を掛ける」か「0.01を足す」か選べますが、指数なので掛け算が一般的です
+    # 3. 緑化シミュレーション（NDVIを指定%増加）
     sim_ndvi = base_ndvi * (1 + increase_rate)
-    sim_lst = model_lst.predict([[sim_ndvi]])[0][0]
+    
+    # 新しい温度感度公式を使用
+    # 温度感度 = -32.35 × NDVI + 46.10
+    sensitivity = -32.3515 * base_ndvi + 46.1069
+    
+    # NDVI増加量
+    delta_ndvi = sim_ndvi - base_ndvi
+    
+    # 温度変化を計算（温度感度 × NDVI増加量）
+    temp_change_by_formula = sensitivity * delta_ndvi
+    
+    # シミュレーション後の温度
+    sim_lst = base_lst + temp_change_by_formula
 
     # 4. 変化率の計算
     lst_change_val = sim_lst - base_lst
@@ -97,6 +112,8 @@ def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increa
 
     print(f"--- {target_year}年 緑化シミュレーション ---")
     print(f"想定NDVI: {base_ndvi:.4f} → シミュレーションNDVI: {sim_ndvi:.4f} (+{increase_rate*100}%)")
+    print(f"NDVI増加量: {delta_ndvi:.4f}")
+    print(f"温度感度: {sensitivity:.4f}℃/NDVI（公式: -32.35 × {base_ndvi:.4f} + 46.10）")
     print(f"想定温度: {base_lst:.2f}℃ → シミュレーション温度: {sim_lst:.2f}℃")
     print(f"温度変化: {lst_change_val:.2f}℃ ({lst_change_percent:.2f}%)")
     
