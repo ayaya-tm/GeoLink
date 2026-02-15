@@ -74,14 +74,11 @@ def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increa
     """
     来年のNDVIが想定よりX%上昇した場合のLST抑制効果をシミュレーションする
     
-    緑化による温度抑制効果の公式を使用:
-    ΔT = -(温度感度) × ΔNDVI
-       = -(-32.35 × NDVI + 46.10) × ΔNDVI
-       = (32.35 × NDVI - 46.10) × ΔNDVI
-    
-    この公式により、NDVI増加で温度が低下する効果を表現
+    新しい温度感度公式を使用:
+    温度感度 = -32.35 × NDVI + 46.10
+    ΔT = 温度感度 × ΔNDVI
     """
-    # 1. モデルの準備（NDVI予測用）
+    # 1. モデルの準備（NDVI予測のみ）
     years_obs = np.array(years).reshape(-1, 1)
     ndvi_obs = np.array(ndvi_values).reshape(-1, 1)
     lst_obs = np.array(lst_values).reshape(-1, 1)
@@ -96,18 +93,15 @@ def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increa
     # 3. 緑化シミュレーション（NDVIを指定%増加）
     sim_ndvi = base_ndvi * (1 + increase_rate)
     
-    # 緑化による温度抑制効果の公式（符号反転版）
-    # 元の温度感度: -32.35 × NDVI + 46.10
-    # 緑化効果: -(温度感度) = 32.35 × NDVI - 46.10
-    base_sensitivity = -32.3515 * base_ndvi + 46.1069
-    greening_effect = -base_sensitivity  # 符号を反転
+    # 新しい温度感度公式を使用
+    # 温度感度 = -32.35 × NDVI + 46.10
+    sensitivity = -32.3515 * base_ndvi + 46.1069
     
     # NDVI増加量
     delta_ndvi = sim_ndvi - base_ndvi
     
-    # 温度変化を計算（緑化効果 × NDVI増加量）
-    # 負の値 = 温度低下
-    temp_change_by_formula = greening_effect * delta_ndvi
+    # 温度変化を計算（温度感度 × NDVI増加量）
+    temp_change_by_formula = sensitivity * delta_ndvi
     
     # シミュレーション後の温度
     sim_lst = base_lst + temp_change_by_formula
@@ -119,8 +113,7 @@ def simulate_greening_effect(years, ndvi_values, lst_values, target_year, increa
     print(f"--- {target_year}年 緑化シミュレーション ---")
     print(f"想定NDVI: {base_ndvi:.4f} → シミュレーションNDVI: {sim_ndvi:.4f} (+{increase_rate*100}%)")
     print(f"NDVI増加量: {delta_ndvi:.4f}")
-    print(f"元の温度感度: {base_sensitivity:.4f}℃/NDVI")
-    print(f"緑化効果係数: {greening_effect:.4f}℃/NDVI（公式: 32.35 × {base_ndvi:.4f} - 46.10）")
+    print(f"温度感度: {sensitivity:.4f}℃/NDVI（公式: -32.35 × {base_ndvi:.4f} + 46.10）")
     print(f"想定温度: {base_lst:.2f}℃ → シミュレーション温度: {sim_lst:.2f}℃")
     print(f"温度変化: {lst_change_val:.2f}℃ ({lst_change_percent:.2f}%)")
     
