@@ -179,7 +179,7 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
             st.markdown("""
             <div class="info-box">
             <b>NDVI (Normalized Difference Vegetation Index)</b><br>
-            値が高いほど植生が豊かで、緑地の量を表します（-1～1の範囲）。
+            値が高いほど植生が豊かで、緑地の量を表します（0～1の範囲）。
             </div>
             """, unsafe_allow_html=True)
         
@@ -347,26 +347,25 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
             st.markdown("#### 📊 シミュレーション結果")
             
             if run_simulation:
-                # 通常の予測（ベースライン）
-                base_ndvi = model_ndvi.predict([[target_year]])[0][0]
-                base_lst = model_lst.predict([[base_ndvi]])[0][0]
-                
-                # 緑化シミュレーション（修正版の公式を使用）
+                # ベースライン（通常予測）の計算
+                from sklearn.linear_model import LinearRegression as _LR
+                _years_obs = np.array(years).reshape(-1, 1)
+                _ndvi_obs = np.array(ndvi_values).reshape(-1, 1)
+                _lst_obs = np.array(lst_values).reshape(-1, 1)
+                _model_ndvi_tmp = _LR().fit(_years_obs, _ndvi_obs)
+                _model_lst_tmp = _LR().fit(_ndvi_obs, _lst_obs)
+                base_ndvi = _model_ndvi_tmp.predict([[target_year]])[0][0]
+                base_lst = _model_lst_tmp.predict([[base_ndvi]])[0][0]
                 sim_ndvi = base_ndvi * (1 + increase_rate)
                 
-                # 緑化効果係数を計算（符号反転版）
-                # 公式: 緑化効果 = 32.35 × NDVI - 46.10
-                greening_effect = 32.3515 * base_ndvi - 46.1069
-                
-                # NDVI増加量
-                delta_ndvi = sim_ndvi - base_ndvi
-                
-                # 温度変化を計算（緑化効果 × NDVI増加量）
-                # 負の値 = 温度低下
-                temp_change_by_formula = greening_effect * delta_ndvi
-                
-                # シミュレーション後の温度
-                sim_lst = base_lst + temp_change_by_formula
+                # simulate_greening_effect() を呼び出してシミュレーション後のLSTを取得
+                sim_lst = simulate_greening_effect(
+                    years,
+                    ndvi_values,
+                    lst_values,
+                    target_year=int(target_year),
+                    increase_rate=increase_rate
+                )
                 
                 lst_change_val = sim_lst - base_lst
                 lst_change_percent = (lst_change_val / base_lst) * 100
@@ -388,25 +387,12 @@ if st.session_state.lst_images and st.session_state.ndvi_images:
                 
                 st.dataframe(result_df, use_container_width=True, hide_index=True)
                 
-                # 詳細情報を表示
-                with st.expander("🔬 計算の詳細"):
-                    st.markdown(f"""
-                    **緑化効果の計算:**
-                    - 現在のNDVI: {base_ndvi:.4f}
-                    - 緑化効果係数: {greening_effect:.4f}℃/NDVI
-                      - 公式: 32.35 × {base_ndvi:.4f} - 46.10 = {greening_effect:.4f}
-                    - NDVI増加量: {delta_ndvi:.4f}
-                    - 温度変化: {greening_effect:.4f} × {delta_ndvi:.4f} = **{temp_change_by_formula:.4f}℃**
-                    
-                    **注:** 負の値は温度低下（冷却効果）を示します
-                    """)
-                
                 # 効果の解説
                 if lst_change_val < 0:
                     st.success(f"✅ {target_year}年にNDVIを{increase_rate*100:.0f}%向上させることで、地表面温度を約**{abs(lst_change_val):.2f}℃**低減できる可能性があります。")
                     st.markdown("🌳 **具体的な緑化施策例**：街路樹の増設、屋上緑化、壁面緑化、公園の整備など")
                 else:
-                    st.warning(f"⚠️ このエリア（NDVI={base_ndvi:.2f}）では緑化による温度抑制効果が限定的です。他の対策と組み合わせることをお勧めします。")
+                    st.info(f"ℹ️ このシミュレーションでは温度抑制効果が見られませんでした。")
             else:
                 st.info("👈 左側で設定を行い、「シミュレーション実行」ボタンを押してください")
         
